@@ -274,6 +274,34 @@
                 cmd: "termux-setup-storage && cd /data/data/com.termux/files && tar -zxvf /sdcard/termux-backup.tar.gz --recursive-unlink --preserve-permissions && echo -e \"\\n\\033[1;32m[+] Restauración finalizada. Reinicia Termux ejecutando exit.\\033[0m\"",
                 desc: "Restaura la copia de seguridad guardada. Sobrescribirá tu entorno actual de Termux. Escribe 'exit' para reiniciar al terminar.",
                 icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" // Restore/Sync icon
+            },
+            {
+                id: 14,
+                title: "Prevenir suspensión (Wake Lock)",
+                cmd: "termux-wake-lock",
+                desc: "Evita que Android ponga Termux en suspensión y cierre el servidor al apagar la pantalla o cambiar de aplicación.",
+                icon: "M13 10V3L4 14h7v7l9-11h-7z" // Power/Lightning icon
+            },
+            {
+                id: 15,
+                title: "Solucionar error CWD / ENOENT",
+                cmd: "cd ~",
+                desc: "Regresa al directorio principal. Resuelve el error 'process.cwd failed / no such file or directory' si Node pierde la ruta.",
+                icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" // Home icon
+            },
+            {
+                id: 16,
+                title: "Cerrar servidor colgado (EADDRINUSE)",
+                cmd: "pkill -f node",
+                desc: "Finaliza los procesos de Node.js colgados para corregir el error 'address already in use 0.0.0.0:8080'.",
+                icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" // Stop icon
+            },
+            {
+                id: 17,
+                title: "Liberar puerto 8080 forzoso",
+                cmd: "fuser -k 8080/tcp",
+                desc: "Mata de forma inmediata cualquier servicio o proceso en segundo plano que mantenga bloqueado el puerto 8080 TCP.",
+                icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" // Lock icon
             }
         ];
 
@@ -284,7 +312,7 @@
         function renderCommands() {
             commandsData.forEach((item, index) => {
                 // Alternar colores de borde para darle ritmo visual
-                const isWarning = item.id === 11 || item.id === 13;
+                const isWarning = item.id === 11 || item.id === 13 || item.id === 16 || item.id === 17;
                 const borderClass = isWarning ? 'border-red-900/50 hover:border-red-500/50' : 'border-gray-700 hover:border-termux-primary/50';
                 const numberColor = isWarning ? 'text-red-400' : 'text-termux-primary';
 
