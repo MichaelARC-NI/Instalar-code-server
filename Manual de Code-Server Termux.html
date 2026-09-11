@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Termux Code-Server | Guía Avanzada</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Configuración personalizada de Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        termux: {
+                            bg: '#111827',
+                            card: '#1F2937',
+                            primary: '#10B981', // Verde estilo terminal
+                            secondary: '#3B82F6', // Azul para enlaces/info
+                            text: '#D1D5DB',
+                            textHighlight: '#F3F4F6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos personalizados para la barra de desplazamiento y detalles finos */
+        body {
+            background-color: #111827; /* termux-bg */
+            color: #D1D5DB; /* termux-text */
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4B5563; 
+        }
+
+        .toast-enter {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        .toast-enter-active {
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.3s ease-out;
+        }
+        .toast-exit {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .toast-exit-active {
+            transform: translateY(100%);
+            opacity: 0;
+            transition: all 0.3s ease-in;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <header class="bg-termux-card border-b border-gray-800 sticky top-0 z-10 shadow-lg">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center border border-gray-700 shadow-inner">
+                    <svg class="w-6 h-6 text-termux-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-termux-textHighlight leading-tight">Code-Server en Termux</h1>
+                    <p class="text-xs md:text-sm text-gray-400">Guía de Comandos y Red</p>
+                </div>
+            </div>
+            <a href="#conexion" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-lg border border-gray-700 transition-colors">
+                <svg class="w-4 h-4 text-termux-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                Ver guía de conexión
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        
+        <!-- Intro -->
+        <div class="mb-10 text-center sm:text-left">
+            <h2 class="text-2xl font-bold text-white mb-3">Lista de Comandos</h2>
+            <p class="text-gray-400 max-w-3xl text-sm md:text-base leading-relaxed">
+                Toca el botón de copiar en cada bloque para llevar el comando directamente a tu portapapeles. Sigue los pasos en orden para una instalación limpia o usa los comandos de mantenimiento y respaldo según lo necesites.
+            </p>
+        </div>
+
+        <!-- Contenedor donde se inyectarán las tarjetas mediante JavaScript -->
+        <div id="commands-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Las tarjetas se generan por JS para mantener el código limpio y mantenible -->
+        </div>
+
+        <!-- Sección Especial: Conexión desde otro dispositivo -->
+        <div id="conexion" class="mt-16 bg-gradient-to-br from-blue-900/40 to-gray-800/80 rounded-2xl p-1 border border-blue-800/50 shadow-xl scroll-mt-24">
+            <div class="bg-termux-card rounded-xl p-6 sm:p-8 h-full">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="p-3 bg-blue-500/20 rounded-lg">
+                        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Conexión en Red Wi-Fi</h2>
+                        <p class="text-blue-200/70 text-sm">Cómo acceder desde tu PC u otro teléfono</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6 text-gray-300">
+                    <p class="leading-relaxed text-sm md:text-base">
+                        En el otro dispositivo <strong>no necesitas ejecutar ningún comando</strong> ni instalar Termux. Solo usarás el navegador web estándar.
+                    </p>
+
+                    <ol class="list-decimal list-inside space-y-4 marker:text-blue-500 marker:font-bold">
+                        <li class="pl-2">Asegúrate de que ambos dispositivos estén en la <strong>misma red Wi-Fi</strong>.</li>
+                        <li class="pl-2">Abre Chrome, Safari, Edge o Firefox en el segundo dispositivo.</li>
+                        <li class="pl-2">
+                            Escribe tu IP seguida del puerto en la barra de direcciones. Formato exacto:
+                            <div class="mt-3 relative group">
+                                <div class="absolute inset-0 bg-blue-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
+                                <div class="relative bg-gray-900 rounded-lg p-4 border border-blue-900/50 font-mono text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <span class="text-blue-300 break-all">http://<span class="text-white font-bold">[TU_DIRECCION_IP]</span>:8080</span>
+                                </div>
+                            </div>
+                            <p class="mt-2 text-xs text-gray-500 italic pl-2">Ejemplo: Si el Paso 7 te dio la IP 192.168.1.15, debes escribir: <strong class="text-gray-300">http://192.168.1.15:8080</strong> (Usa siempre http://, no https://)</p>
+                        </li>
+                        <li class="pl-2">Al cargar la página, ingresa la contraseña que obtuviste en el <strong>Paso 6</strong>.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Notificación Flotante (Toast) -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-termux-primary text-gray-900 px-6 py-3 rounded-full font-semibold shadow-lg shadow-emerald-900/20 flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-8 z-50">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        Comando copiado
+    </div>
+
+    <script>
+        // Base de datos de comandos
+        const commandsData = [
+            {
+                id: 1,
+                title: "Actualizar sistema",
+                cmd: "pkg update && pkg upgrade -y",
+                desc: "Actualiza la lista de paquetes y las dependencias del sistema operativo Termux para asegurar compatibilidad total.",
+                icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" // Refresh icon
+            },
+            {
+                id: 2,
+                title: "Permisos de almacenamiento",
+                cmd: "termux-setup-storage",
+                desc: "Solicita acceso al almacenamiento interno del dispositivo Android. Acepta el aviso emergente en pantalla cuando aparezca.",
+                icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" // Folder icon
+            },
+            {
+                id: 3,
+                title: "Instalar repositorio TUR",
+                cmd: "pkg install tur-repo -y",
+                desc: "Habilita el Termux User Repository (TUR), mantenido por la comunidad, para poder encontrar el paquete de code-server.",
+                icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" // Archive icon
+            },
+            {
+                id: 4,
+                title: "Instalar code-server",
+                cmd: "pkg install code-server -y",
+                desc: "Descarga e instala el paquete principal de Visual Studio Code Server en tu terminal.",
+                icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" // Code icon
+            },
+            {
+                id: 5,
+                title: "Generar configuración inicial",
+                cmd: "code-server",
+                desc: "Inicia el servidor por primera vez para forzar la creación de las carpetas de configuración. Una vez que cargue, presiona Ctrl + C para detenerlo.",
+                icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" // Cog icon
+            },
+            {
+                id: 6,
+                title: "Ver contraseña",
+                cmd: "cat ~/.config/code-server/config.yaml",
+                desc: "Lee el archivo de configuración. Copia la clave secreta que aparece justo al lado de la palabra 'password:'.",
+                icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" // Eye icon
+            },
+            {
+                id: 7,
+                title: "Ver tu IP local (Wi-Fi)",
+                cmd: "ifconfig",
+                desc: "Muestra tu red. Busca la sección 'wlan0' y anota la dirección IP que aparece junto a la palabra 'inet'.",
+                icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" // Globe icon
+            },
+            {
+                id: 8,
+                title: "Modificar IP (Permanente)",
+                cmd: "sed -i 's/127.0.0.1:8080/0.0.0.0:8080/g' ~/.config/code-server/config.yaml",
+                desc: "Cambia el acceso de solo local (127.0.0.1) a toda la red (0.0.0.0) de forma permanente en el archivo de configuración.",
+                icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" // Edit icon
+            },
+            {
+                id: 9,
+                title: "Iniciar servidor (Manual)",
+                cmd: "code-server --bind-addr 0.0.0.0:8080",
+                desc: "Inicia el servidor forzándolo a escuchar a toda la red local en el puerto estándar 8080. (Útil si te saltaste el paso 8).",
+                icon: "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z" // Play icon
+            },
+            {
+                id: 10,
+                title: "Desinstalar code-server",
+                cmd: "pkg uninstall code-server -y",
+                desc: "Elimina el paquete del sistema Termux (esta acción no borra tus archivos de configuración ni tus extensiones).",
+                icon: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" // Trash icon
+            },
+            {
+                id: 11,
+                title: "Borrar todos los datos",
+                cmd: "rm -rf ~/.config/code-server ~/.local/share/code-server",
+                desc: "Limpieza profunda (Peligro). Elimina configuraciones, contraseñas guardadas y extensiones instaladas de code-server.",
+                icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" // Warning icon
+            },
+            {
+                id: 12,
+                title: "Crear respaldo (Backup)",
+                cmd: "termux-setup-storage && cd /data/data/com.termux/files && tar -zcvf /sdcard/termux-backup.tar.gz usr home && echo -e \"\\n\\033[1;32m[+] Respaldo completado en /sdcard/termux-backup.tar.gz\\033[0m\"",
+                desc: "Crea un archivo comprimido (.tar.gz) con todo tu entorno Termux y lo guarda seguro en el almacenamiento interno de tu teléfono.",
+                icon: "M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" // Download/Save icon
+            },
+            {
+                id: 13,
+                title: "Restaurar respaldo",
+                cmd: "termux-setup-storage && cd /data/data/com.termux/files && tar -zxvf /sdcard/termux-backup.tar.gz --recursive-unlink --preserve-permissions && echo -e \"\\n\\033[1;32m[+] Restauración finalizada. Reinicia Termux ejecutando exit.\\033[0m\"",
+                desc: "Restaura la copia de seguridad guardada. Sobrescribirá tu entorno actual de Termux. Escribe 'exit' para reiniciar al terminar.",
+                icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" // Restore/Sync icon
+            }
+        ];
+
+        const container = document.getElementById('commands-container');
+        const toast = document.getElementById('toast');
+
+        // Función para renderizar tarjetas
+        function renderCommands() {
+            commandsData.forEach((item, index) => {
+                // Alternar colores de borde para darle ritmo visual
+                const isWarning = item.id === 11 || item.id === 13;
+                const borderClass = isWarning ? 'border-red-900/50 hover:border-red-500/50' : 'border-gray-700 hover:border-termux-primary/50';
+                const numberColor = isWarning ? 'text-red-400' : 'text-termux-primary';
+
+                const cardHTML = `
+                    <div class="bg-termux-card rounded-xl p-5 md:p-6 border ${borderClass} transition-colors duration-300 flex flex-col h-full shadow-lg hover:shadow-xl">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 ${numberColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.icon}"></path></svg>
+                                </div>
+                                <h3 class="text-lg font-bold text-white leading-tight">
+                                    <span class="${numberColor} font-mono mr-1">${item.id}.</span> ${item.title}
+                                </h3>
+                            </div>
+                        </div>
+                        
+                        <p class="text-sm text-gray-400 mb-5 flex-grow leading-relaxed">${item.desc}</p>
+                        
+                        <div class="relative bg-[#0d1117] rounded-lg border border-gray-800 group">
+                            <div class="overflow-x-auto p-4 pr-16 scrollbar-hide">
+                                <code class="text-sm font-mono text-termux-textHighlight whitespace-pre">${item.cmd}</code>
+                            </div>
+                            
+                            <button 
+                                onclick="copyCommand(this, \`${item.cmd.replace(/`/g, '\\`')}\`)"
+                                class="absolute top-1/2 -translate-y-1/2 right-2 p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-md border border-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-termux-primary z-10"
+                                aria-label="Copiar comando">
+                                <svg class="w-5 h-5 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <svg class="w-5 h-5 check-icon hidden text-termux-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHTML);
+            });
+        }
+
+        // Función segura para copiar al portapapeles
+        function copyCommand(btnElement, text) {
+            // Método moderno
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => showFeedback(btnElement));
+            } else {
+                // Método Fallback (útil para iframes o entornos sin HTTPS)
+                let textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                textArea.style.top = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showFeedback(btnElement);
+                } catch (err) {
+                    console.error('Error al copiar: ', err);
+                }
+                textArea.remove();
+            }
+        }
+
+        // Función para mostrar el cambio visual tras copiar
+        function showFeedback(btnElement) {
+            // Cambiar icono en el botón
+            const copyIcon = btnElement.querySelector('.copy-icon');
+            const checkIcon = btnElement.querySelector('.check-icon');
+            
+            copyIcon.classList.add('hidden');
+            checkIcon.classList.remove('hidden');
+            btnElement.classList.add('border-termux-primary', 'bg-emerald-900/20');
+
+            // Mostrar Toast notification
+            toast.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+            
+            setTimeout(() => {
+                // Restaurar botón
+                copyIcon.classList.remove('hidden');
+                checkIcon.classList.add('hidden');
+                btnElement.classList.remove('border-termux-primary', 'bg-emerald-900/20');
+                
+                // Ocultar Toast
+                toast.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+            }, 2000);
+        }
+
+        // Ejecutar renderizado inicial
+        renderCommands();
+    </script>
+</body>
+</html>
