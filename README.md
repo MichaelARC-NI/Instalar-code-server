@@ -46,4 +46,3 @@ Si deseas ejecutar o modificar esta guía en tu propio equipo, es muy sencillo:
    
 ```bash
    git clone [https://github.com/MichaelARC-NI/Instalar-code-server.git](https://github.com/MichaelARC-NI/Instalar-code-server.git)
-
