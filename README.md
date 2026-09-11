@@ -14,6 +14,10 @@ Este repositorio contiene una **Guía Interactiva Avanzada** diseñada específi
 
 El proyecto no es solo un documento estático; es una interfaz web de una sola página (SPA) que presenta una lista de comandos esenciales, con un sistema de copiado al portapapeles con un solo toque (One-Click Copy), diseñado para facilitar el proceso de instalación y configuración directamente desde el teléfono sin tener que escribir comandos largos manualmente.
 
+### 🌐 Demo en Vivo
+Puedes ver y utilizar la guía interactiva directamente aquí:
+**[https://michaelarc-ni.github.io/Instalar-code-server/](https://michaelarc-ni.github.io/Instalar-code-server/)**
+
 ### ✨ Características Principales
 
 *   **Diseño UI/UX Optimizado:** Interfaz moderna estilo "Terminal/Dark Mode" utilizando Tailwind CSS, amigable para la vista y perfecta para entornos de desarrollo.
@@ -34,14 +38,12 @@ El proyecto no es solo un documento estático; es una interfaz web de una sola p
 
 ---
 
-## 🚀 Cómo usar este proyecto
+## 🚀 Cómo usar este proyecto de forma local
 
-Dado que es un archivo HTML estático puro, tienes varias opciones rápidas para implementarlo o visualizarlo:
+Si deseas ejecutar o modificar esta guía en tu propio equipo, es muy sencillo:
 
-### Opción 1: Visualización Local
-1. Clona este repositorio o descarga el archivo `index.html`.
+1. Clona este repositorio usando el enlace oficial:
    
 ```bash
-   git clone [https://github.com/TU_USUARIO/termux-code-server-guide.git](https://github.com/TU_USUARIO/termux-code-server-guide.git)
+   git clone [https://github.com/MichaelARC-NI/Instalar-code-server.git](https://github.com/MichaelARC-NI/Instalar-code-server.git)
 
-   
