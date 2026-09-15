@@ -1,410 +1,879 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termux Code-Server | Guía Avanzada</title>
-    
-    <!-- Tailwind CSS -->
+    <title>Code-Server en Termux | Guía de Instalación & Documentación</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-    <!-- Configuración personalizada de Tailwind -->
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f6ff',
+                            100: '#e0edff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        codebg: '#0f172a'
+                    },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        termux: {
-                            bg: '#111827',
-                            card: '#1F2937',
-                            primary: '#10B981', // Verde estilo terminal
-                            secondary: '#3B82F6', // Azul para enlaces/info
-                            text: '#D1D5DB',
-                            textHighlight: '#F3F4F6'
-                        }
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
                     }
                 }
             }
         }
     </script>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Estilos personalizados para la barra de desplazamiento y detalles finos */
-        body {
-            background-color: #111827; /* termux-bg */
-            color: #D1D5DB; /* termux-text */
-            -webkit-font-smoothing: antialiased;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
         
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
+            height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #111827; 
+            background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: #374151; 
+            background: #cbd5e1;
             border-radius: 4px;
         }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
         ::-webkit-scrollbar-thumb:hover {
-            background: #4B5563; 
+            background: #94a3b8;
         }
-
-        .toast-enter {
-            transform: translateY(100%);
-            opacity: 0;
-        }
-        .toast-enter-active {
-            transform: translateY(0);
-            opacity: 1;
-            transition: all 0.3s ease-out;
-        }
-        .toast-exit {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .toast-exit-active {
-            transform: translateY(100%);
-            opacity: 0;
-            transition: all 0.3s ease-in;
+        
+        .active-nav-link {
+            border-left-color: #3b82f6 !important;
+            color: #3b82f6 !important;
+            font-weight: 600;
+            background-color: rgba(59, 130, 246, 0.08);
         }
     </style>
 </head>
-<body class="min-h-screen pb-12">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 antialiased min-h-screen transition-colors duration-200">
 
-    <header class="bg-termux-card border-b border-gray-800 sticky top-0 z-10 shadow-lg">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center border border-gray-700 shadow-inner">
-                    <svg class="w-6 h-6 text-termux-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
+    <!-- Top Navbar -->
+    <header class="sticky top-0 z-40 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo / Title -->
+                <div class="flex items-center gap-3">
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <a href="#" class="flex items-center gap-2.5 group">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                            <i class="fa-solid fa-terminal text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white text-lg tracking-tight">Code-Server</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-semibold ml-1.5 border border-blue-200 dark:border-blue-800">Termux Edition</span>
+                        </div>
+                    </a>
                 </div>
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-termux-textHighlight leading-tight">Code-Server en Termux</h1>
-                    <p class="text-xs md:text-sm text-gray-400">Guía de Comandos y Red</p>
+
+                <!-- Central Search Bar -->
+                <div class="hidden md:flex items-center flex-1 max-w-md mx-8">
+                    <div class="relative w-full">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="text" id="global-search" placeholder="Buscar comando, error o sección..." 
+                            class="w-full pl-10 pr-4 py-1.5 text-sm bg-slate-100 dark:bg-slate-800/80 border border-transparent dark:border-slate-700/60 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 dark:focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400">
+                    </div>
+                </div>
+
+                <!-- Actions / Controls -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button id="theme-toggle" class="p-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors" title="Cambiar tema">
+                        <i class="fa-solid fa-moon dark:hidden"></i>
+                        <i class="fa-solid fa-sun hidden dark:inline"></i>
+                    </button>
+
+                    <a href="https://github.com/MichaelARC-NI/Instalar-code-server.git" target="_blank" rel="noopener" class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+                        <i class="fa-brands fa-github text-base"></i>
+                        <span>GitHub</span>
+                    </a>
+
+                    <a href="#quick-start" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/30 transition-all">
+                        <span>Empezar</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                    </a>
                 </div>
             </div>
-            <a href="#conexion" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-lg border border-gray-700 transition-colors">
-                <svg class="w-4 h-4 text-termux-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                Ver guía de conexión
-            </a>
         </div>
     </header>
 
-    <main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        
-        <!-- Intro -->
-        <div class="mb-10 text-center sm:text-left">
-            <h2 class="text-2xl font-bold text-white mb-3">Lista de Comandos</h2>
-            <p class="text-gray-400 max-w-3xl text-sm md:text-base leading-relaxed">
-                Toca el botón de copiar en cada bloque para llevar el comando directamente a tu portapapeles. Sigue los pasos en orden para una instalación limpia o usa los comandos de mantenimiento y respaldo según lo necesites.
-            </p>
-        </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col lg:flex-row gap-8">
 
-        <!-- Contenedor donde se inyectarán las tarjetas mediante JavaScript -->
-        <div id="commands-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Las tarjetas se generan por JS para mantener el código limpio y mantenible -->
-        </div>
+            <!-- Mobile Drawer Overlay -->
+            <div id="drawer-backdrop" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden"></div>
 
-        <!-- Sección Especial: Conexión desde otro dispositivo -->
-        <div id="conexion" class="mt-16 bg-gradient-to-br from-blue-900/40 to-gray-800/80 rounded-2xl p-1 border border-blue-800/50 shadow-xl scroll-mt-24">
-            <div class="bg-termux-card rounded-xl p-6 sm:p-8 h-full">
-                <div class="flex items-center gap-4 mb-6">
-                    <div class="p-3 bg-blue-500/20 rounded-lg">
-                        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <!-- Sidebar Navigation -->
+            <aside id="sidebar" class="fixed lg:sticky top-20 left-0 z-50 lg:z-0 w-72 h-[calc(100vh-5rem)] bg-white dark:bg-slate-900 lg:bg-transparent lg:dark:bg-transparent border-r lg:border-r-0 border-slate-200 dark:border-slate-800 lg:block p-4 lg:p-0 overflow-y-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+                <div class="space-y-6">
+                    <!-- Progress Card -->
+                    <div class="p-4 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-blue-950/40 border border-blue-100 dark:border-blue-900/50">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-blue-900 dark:text-blue-300">Progreso de Instalación</span>
+                            <span id="progress-percent" class="text-xs font-bold text-blue-600 dark:text-blue-400">0%</span>
+                        </div>
+                        <div class="w-full bg-blue-200 dark:bg-blue-950 rounded-full h-2 overflow-hidden">
+                            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">Completa las tareas para medir tu avance.</p>
                     </div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">Conexión en Red Wi-Fi</h2>
-                        <p class="text-blue-200/70 text-sm">Cómo acceder desde tu PC u otro teléfono</p>
+
+                    <!-- Navigation Links -->
+                    <nav class="space-y-1 text-sm font-medium">
+                        <div class="px-3 pb-2 text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            Tabla de Contenidos
+                        </div>
+                        <a href="#overview" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-circle-info text-blue-500 w-4"></i>
+                            <span>Requisitos Previos</span>
+                        </a>
+                        <a href="#quick-start" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-rocket text-emerald-500 w-4"></i>
+                            <span>Guía Paso a Paso</span>
+                        </a>
+                        <a href="#wifi-config" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-wifi text-indigo-500 w-4"></i>
+                            <span>Configuración Wi-Fi</span>
+                        </a>
+                        <a href="#ip-tool" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-calculator text-amber-500 w-4"></i>
+                            <span>Generador de Enlaces IP</span>
+                        </a>
+                        <a href="#connect-device" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-laptop text-purple-500 w-4"></i>
+                            <span>Conexión entre Dispositivos</span>
+                        </a>
+                        <a href="#troubleshooting" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-triangle-exclamation text-rose-500 w-4"></i>
+                            <span>Solución de Errores</span>
+                        </a>
+                        <a href="#backup" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-box-archive text-teal-500 w-4"></i>
+                            <span>Respaldo y Restauración</span>
+                        </a>
+                        <a href="#uninstall" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-trash-can text-slate-400 w-4"></i>
+                            <span>Desinstalación</span>
+                        </a>
+                        <a href="#author" class="nav-link flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 border-l-2 border-transparent transition-all">
+                            <i class="fa-solid fa-user text-cyan-500 w-4"></i>
+                            <span>Autor y Recursos</span>
+                        </a>
+                    </nav>
+
+                    <!-- Useful Callout Badge -->
+                    <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm text-xs space-y-2">
+                        <div class="flex items-center gap-2 font-semibold text-slate-900 dark:text-white">
+                            <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                            <span>¿Sabías que?</span>
+                        </div>
+                        <p class="text-slate-500 dark:text-slate-400 leading-relaxed">
+                            Puedes instalar extensiones de VS Code directamente desde el navegador conectándote a tu Termux.
+                        </p>
                     </div>
                 </div>
+            </aside>
 
-                <div class="space-y-6 text-gray-300">
-                    <p class="leading-relaxed text-sm md:text-base">
-                        En el otro dispositivo <strong>no necesitas ejecutar ningún comando</strong> ni instalar Termux. Solo usarás el navegador web estándar.
-                    </p>
+            <!-- Main Content Area -->
+            <main class="flex-1 min-w-0 space-y-12">
 
-                    <ol class="list-decimal list-inside space-y-4 marker:text-blue-500 marker:font-bold">
-                        <li class="pl-2">Asegúrate de que ambos dispositivos estén en la <strong>misma red Wi-Fi</strong>.</li>
-                        <li class="pl-2">Abre Chrome, Safari, Edge o Firefox en el segundo dispositivo.</li>
-                        <li class="pl-2">
-                            Escribe tu IP seguida del puerto en la barra de direcciones. Formato exacto:
-                            <div class="mt-3 relative group">
-                                <div class="absolute inset-0 bg-blue-500 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
-                                <div class="relative bg-gray-900 rounded-lg p-4 border border-blue-900/50 font-mono text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
-                                    <span class="text-blue-300 break-all">http://<span class="text-white font-bold">[TU_DIRECCION_IP]</span>:8080</span>
-                                </div>
+                <!-- Hero Section -->
+                <section class="relative rounded-3xl p-6 sm:p-10 bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white overflow-hidden shadow-xl border border-slate-800">
+                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <div class="relative z-10 space-y-4 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold backdrop-blur-md">
+                            <span class="flex h-2 w-2 rounded-full bg-blue-400 animate-ping"></span>
+                            Entorno IDE Móvil Completo
+                        </div>
+                        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">
+                            VS Code en Android con <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">Termux</span>
+                        </h1>
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                            Transforma tu dispositivo móvil o tablet en un entorno de desarrollo web profesional accesible localmente o desde cualquier equipo dentro de tu red Wi-Fi.
+                        </p>
+
+                        <div class="pt-2 flex flex-wrap gap-3 text-xs">
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                                <i class="fa-solid fa-clock text-blue-400"></i>
+                                <span>Tiempo de setup: ~10 min</span>
                             </div>
-                            <p class="mt-2 text-xs text-gray-500 italic pl-2">Ejemplo: Si el Paso 7 te dio la IP 192.168.1.15, debes escribir: <strong class="text-gray-300">http://192.168.1.15:8080</strong> (Usa siempre http://, no https://)</p>
-                        </li>
-                        <li class="pl-2">Al cargar la página, ingresa la contraseña que obtuviste en el <strong>Paso 6</strong>.</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- Pie de página (Footer) con enlaces del proyecto -->
-    <footer class="mt-16 border-t border-gray-800 bg-termux-card/30">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="text-sm text-gray-400 text-center sm:text-left">
-                <span class="font-semibold text-gray-300">Proyecto de MichaelARC-NI</span>
-                <p class="text-xs mt-1 opacity-70">Guía de instalación de Code-Server para Termux</p>
-            </div>
-            <div class="flex items-center justify-center gap-6 text-sm">
-                <a href="https://michaelarc-ni.github.io/Instalar-code-server/" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-termux-primary transition-colors flex items-center gap-2 group">
-                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
-                    <span>Página Oficial</span>
-                </a>
-                <a href="https://github.com/MichaelARC-NI/Instalar-code-server.git" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors flex items-center gap-2 group">
-                    <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"></path></svg>
-                    <span>Repositorio GitHub</span>
-                </a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Notificación Flotante (Toast) -->
-    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-termux-primary text-gray-900 px-6 py-3 rounded-full font-semibold shadow-lg shadow-emerald-900/20 flex items-center gap-2 transition-all duration-300 opacity-0 pointer-events-none translate-y-8 z-50">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        Comando copiado
-    </div>
-
-    <script>
-        // Base de datos de comandos
-        const commandsData = [
-            {
-                id: 1,
-                title: "Actualizar sistema",
-                cmd: "pkg update && pkg upgrade -y",
-                desc: "Actualiza la lista de paquetes y las dependencias del sistema operativo Termux para asegurar compatibilidad total.",
-                icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" // Refresh icon
-            },
-            {
-                id: 2,
-                title: "Permisos de almacenamiento",
-                cmd: "termux-setup-storage",
-                desc: "Solicita acceso al almacenamiento interno del dispositivo Android. Acepta el aviso emergente en pantalla cuando aparezca.",
-                icon: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" // Folder icon
-            },
-            {
-                id: 3,
-                title: "Instalar repositorio TUR",
-                cmd: "pkg install tur-repo -y",
-                desc: "Habilita el Termux User Repository (TUR), mantenido por la comunidad, para poder encontrar el paquete de code-server.",
-                icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" // Archive icon
-            },
-            {
-                id: 4,
-                title: "Instalar code-server",
-                cmd: "pkg install code-server -y",
-                desc: "Descarga e instala el paquete principal de Visual Studio Code Server en tu terminal.",
-                icon: "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" // Code icon
-            },
-            {
-                id: 5,
-                title: "Generar configuración inicial",
-                cmd: "code-server",
-                desc: "Inicia el servidor por primera vez para forzar la creación de las carpetas de configuración. Una vez que cargue, presiona Ctrl + C para detenerlo.",
-                icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" // Cog icon
-            },
-            {
-                id: 6,
-                title: "Ver contraseña",
-                cmd: "cat ~/.config/code-server/config.yaml",
-                desc: "Lee el archivo de configuración. Copia la clave secreta que aparece justo al lado de la palabra 'password:'.",
-                icon: "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" // Eye icon
-            },
-            {
-                id: 7,
-                title: "Ver tu IP local (Wi-Fi)",
-                cmd: "ifconfig",
-                desc: "Muestra tu red. Busca la sección 'wlan0' y anota la dirección IP que aparece junto a la palabra 'inet'.",
-                icon: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" // Globe icon
-            },
-            {
-                id: 8,
-                title: "Modificar IP (Permanente)",
-                cmd: "sed -i 's/127.0.0.1:8080/0.0.0.0:8080/g' ~/.config/code-server/config.yaml",
-                desc: "Cambia el acceso de solo local (127.0.0.1) a toda la red (0.0.0.0) de forma permanente en el archivo de configuración.",
-                icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" // Edit icon
-            },
-            {
-                id: 9,
-                title: "Iniciar servidor (Manual)",
-                cmd: "code-server --bind-addr 0.0.0.0:8080",
-                desc: "Inicia el servidor forzándolo a escuchar a toda la red local en el puerto estándar 8080. (Útil si te saltaste el paso 8).",
-                icon: "M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z" // Play icon
-            },
-            {
-                id: 10,
-                title: "Desinstalar code-server",
-                cmd: "pkg uninstall code-server -y",
-                desc: "Elimina el paquete del sistema Termux (esta acción no borra tus archivos de configuración ni tus extensiones).",
-                icon: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" // Trash icon
-            },
-            {
-                id: 11,
-                title: "Borrar todos los datos",
-                cmd: "rm -rf ~/.config/code-server ~/.local/share/code-server",
-                desc: "Limpieza profunda (Peligro). Elimina configuraciones, contraseñas guardadas y extensiones instaladas de code-server.",
-                icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" // Warning icon
-            },
-            {
-                id: 12,
-                title: "Crear respaldo (Backup)",
-                cmd: "termux-setup-storage && cd /data/data/com.termux/files && tar -zcvf /sdcard/termux-backup.tar.gz usr home && echo -e \"\\n\\033[1;32m[+] Respaldo completado en /sdcard/termux-backup.tar.gz\\033[0m\"",
-                desc: "Crea un archivo comprimido (.tar.gz) con todo tu entorno Termux y lo guarda seguro en el almacenamiento interno de tu teléfono.",
-                icon: "M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" // Download/Save icon
-            },
-            {
-                id: 13,
-                title: "Restaurar respaldo",
-                cmd: "termux-setup-storage && cd /data/data/com.termux/files && tar -zxvf /sdcard/termux-backup.tar.gz --recursive-unlink --preserve-permissions && echo -e \"\\n\\033[1;32m[+] Restauración finalizada. Reinicia Termux ejecutando exit.\\033[0m\"",
-                desc: "Restaura la copia de seguridad guardada. Sobrescribirá tu entorno actual de Termux. Escribe 'exit' para reiniciar al terminar.",
-                icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" // Restore/Sync icon
-            },
-            {
-                id: 14,
-                title: "Prevenir suspensión (Wake Lock)",
-                cmd: "termux-wake-lock",
-                desc: "Evita que Android ponga Termux en suspensión y cierre el servidor al apagar la pantalla o cambiar de aplicación.",
-                icon: "M13 10V3L4 14h7v7l9-11h-7z" // Power/Lightning icon
-            },
-            {
-                id: 15,
-                title: "Solucionar error CWD / ENOENT",
-                cmd: "cd ~",
-                desc: "Regresa al directorio principal. Resuelve el error 'process.cwd failed / no such file or directory' si Node pierde la ruta.",
-                icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" // Home icon
-            },
-            {
-                id: 16,
-                title: "Cerrar servidor colgado (EADDRINUSE)",
-                cmd: "pkill -f node",
-                desc: "Finaliza los procesos de Node.js colgados para corregir el error 'address already in use 0.0.0.0:8080'.",
-                icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" // Stop icon
-            },
-            {
-                id: 17,
-                title: "Liberar puerto 8080 forzoso",
-                cmd: "fuser -k 8080/tcp",
-                desc: "Mata de forma inmediata cualquier servicio o proceso en segundo plano que mantenga bloqueado el puerto 8080 TCP.",
-                icon: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" // Lock icon
-            }
-        ];
-
-        const container = document.getElementById('commands-container');
-        const toast = document.getElementById('toast');
-
-        // Función para renderizar tarjetas
-        function renderCommands() {
-            commandsData.forEach((item, index) => {
-                // Alternar colores de borde para darle ritmo visual
-                const isWarning = item.id === 11 || item.id === 13 || item.id === 16 || item.id === 17;
-                const borderClass = isWarning ? 'border-red-900/50 hover:border-red-500/50' : 'border-gray-700 hover:border-termux-primary/50';
-                const numberColor = isWarning ? 'text-red-400' : 'text-termux-primary';
-
-                const cardHTML = `
-                    <div class="bg-termux-card rounded-xl p-5 md:p-6 border ${borderClass} transition-colors duration-300 flex flex-col h-full shadow-lg hover:shadow-xl">
-                        <div class="flex items-start justify-between mb-3">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0">
-                                    <svg class="w-4 h-4 ${numberColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${item.icon}"></path></svg>
-                                </div>
-                                <h3 class="text-lg font-bold text-white leading-tight">
-                                    <span class="${numberColor} font-mono mr-1">${item.id}.</span> ${item.title}
-                                </h3>
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                                <i class="fa-solid fa-code text-emerald-400"></i>
+                                <span>Paquete: code-server (TUR)</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300">
+                                <i class="fa-solid fa-shield-halved text-amber-400"></i>
+                                <span>Sin requerir Root</span>
                             </div>
                         </div>
-                        
-                        <p class="text-sm text-gray-400 mb-5 flex-grow leading-relaxed">${item.desc}</p>
-                        
-                        <div class="relative bg-[#0d1117] rounded-lg border border-gray-800 group">
-                            <div class="overflow-x-auto p-4 pr-16 scrollbar-hide">
-                                <code class="text-sm font-mono text-termux-textHighlight whitespace-pre">${item.cmd}</code>
+                    </div>
+                </section>
+
+                <!-- SECTION 1: Requisitos Previos -->
+                <section id="overview" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">1</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Requisitos Previos</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-2">
+                            <div class="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center">
+                                <i class="fa-solid fa-download text-lg"></i>
                             </div>
-                            
-                            <button 
-                                onclick="copyCommand(this, \`${item.cmd.replace(/`/g, '\\`')}\`)"
-                                class="absolute top-1/2 -translate-y-1/2 right-2 p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-md border border-gray-700 transition-all focus:outline-none focus:ring-2 focus:ring-termux-primary z-10"
-                                aria-label="Copiar comando">
-                                <svg class="w-5 h-5 copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
-                                <svg class="w-5 h-5 check-icon hidden text-termux-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">1. Termux Actualizado</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Debe estar instalado obligatoriamente desde <strong>F-Droid</strong> o <strong>GitHub</strong>. No uses la versión de Play Store (está obsoleta).
+                            </p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-2">
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <i class="fa-solid fa-wifi text-lg"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">2. Conexión Wi-Fi</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Necesitas una conexión a internet activa para descargar paquetes y acceso a la red local Wi-Fi compartida.
+                            </p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-2">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                <i class="fa-solid fa-mobile-screen text-lg"></i>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">3. Misma Red</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                Ambos dispositivos (el teléfono Android y la PC/Tablet cliente) deben estar conectados en el mismo router Wi-Fi.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: Guía Paso a Paso -->
+                <section id="quick-start" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">2</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Guía de Instalación Paso a Paso</h2>
+                        </div>
+                        <span class="text-xs text-slate-500">Marca los pasos completados</span>
+                    </div>
+
+                    <div class="space-y-4">
+                        
+                        <!-- Step 1 -->
+                        <div class="step-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="chk-step-1" class="step-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="chk-step-1" class="font-bold text-slate-900 dark:text-white cursor-pointer">Paso 1: Actualizar el sistema</label>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                        Asegúrate de que los repositorios de paquetes y dependencias básicas estén en su versión más reciente.
+                                    </p>
+                                </div>
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">Terminal</span>
+                            </div>
+
+                            <div class="mt-3 relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>pkg update && pkg upgrade -y</code></pre>
+                                <button onclick="copyCommand('pkg update && pkg upgrade -y', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="step-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="chk-step-2" class="step-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="chk-step-2" class="font-bold text-slate-900 dark:text-white cursor-pointer">Paso 2: Otorgar permisos de almacenamiento</label>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                        Concede acceso a Termux para leer y escribir archivos en la memoria interna de tu dispositivo Android.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>termux-setup-storage</code></pre>
+                                <button onclick="copyCommand('termux-setup-storage', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                            <div class="mt-2 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pl-6">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span>Acepta el mensaje emergente de permisos en la pantalla de tu móvil.</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="step-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="chk-step-3" class="step-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="chk-step-3" class="font-bold text-slate-900 dark:text-white cursor-pointer">Paso 3: Evitar suspensión (Wake Lock)</label>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                        Evita que Android cierre o detenga el proceso del servidor cuando la pantalla se apague.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>termux-wake-lock</code></pre>
+                                <button onclick="copyCommand('termux-wake-lock', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="step-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="chk-step-4" class="step-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="chk-step-4" class="font-bold text-slate-900 dark:text-white cursor-pointer">Paso 4: Instalar repositorio comunitario (TUR)</label>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                        Añade el <i>Termux User Repository</i> para obtener compilaciones optimizadas de code-server.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>pkg install tur-repo -y</code></pre>
+                                <button onclick="copyCommand('pkg install tur-repo -y', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 5 -->
+                        <div class="step-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="chk-step-5" class="step-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="chk-step-5" class="font-bold text-slate-900 dark:text-white cursor-pointer">Paso 5: Instalar Code-Server</label>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                        Instala el paquete principal de VS Code adaptado para ejecutarse en entornos móviles.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>pkg install code-server -y</code></pre>
+                                <button onclick="copyCommand('pkg install code-server -y', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 6 -->
+                        <div class="step-card p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" id="chk-step-6" class="step-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500">
+                                        <label for="chk-step-6" class="font-bold text-slate-900 dark:text-white cursor-pointer">Paso 6: Generar configuración inicial</label>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                        Ejecuta el servidor una primera vez para que genere sus archivos de configuración iniciales.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>code-server</code></pre>
+                                <button onclick="copyCommand('code-server', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400 pl-6">
+                                💡 Una vez veas que el servidor ha iniciado y muestre líneas de log, presiona <kbd class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700">Ctrl + C</kbd> para detenerlo.
+                            </p>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- SECTION 3: Configuración para Red Wi-Fi -->
+                <section id="wifi-config" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">3</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Configuración para Acceso en Red Wi-Fi</h2>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300 leading-relaxed">
+                        Por defecto, <code>code-server</code> solo escucha localmente en <code>127.0.0.1</code>. Para poder abrir el editor desde una tablet o PC en tu red Wi-Fi, debemos indicarle que escuche en <code>0.0.0.0</code>.
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                            <div class="font-bold text-slate-900 dark:text-white text-sm">1. Modificar IP de escucha (Comando automático):</div>
+                            <div class="relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>sed -i 's/127.0.0.1:8080/0.0.0.0:8080/g' ~/.config/code-server/config.yaml</code></pre>
+                                <button onclick="copyCommand(`sed -i 's/127.0.0.1:8080/0.0.0.0:8080/g' ~/.config/code-server/config.yaml`, this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                            <div class="font-bold text-slate-900 dark:text-white text-sm">2. Ver tu contraseña generada:</div>
+                            <div class="relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>cat ~/.config/code-server/config.yaml</code></pre>
+                                <button onclick="copyCommand('cat ~/.config/code-server/config.yaml', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                            <p class="text-xs text-slate-500">Copia la clave alfanumérica que aparece al lado del parámetro <code>password:</code>.</p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                            <div class="font-bold text-slate-900 dark:text-white text-sm">3. Obtener tu dirección IP local:</div>
+                            <div class="relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>ifconfig</code></pre>
+                                <button onclick="copyCommand('ifconfig', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                            <p class="text-xs text-slate-500">Busca el apartado <code>wlan0</code> e identifica la dirección IP junto a <code>inet</code> (ej. <code>192.168.1.8</code>).</p>
+                        </div>
+
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                            <div class="font-bold text-slate-900 dark:text-white text-sm">4. Iniciar el servidor:</div>
+                            <div class="relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3.5 rounded-xl text-xs overflow-x-auto border border-slate-800"><code>code-server</code></pre>
+                                <button onclick="copyCommand('code-server', this)" class="absolute right-2.5 top-2.5 px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Copiar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 4: Generador de IP Interactivo -->
+                <section id="ip-tool" class="scroll-mt-24 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white shadow-lg border border-slate-800 space-y-6">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-semibold border border-indigo-500/30">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            Herramienta Interactiva
+                        </div>
+                        <h3 class="text-xl font-bold">Generador de Enlace de Conexión</h3>
+                        <p class="text-xs text-slate-300">
+                            Escribe la IP de tu dispositivo Android obtenida con <code>ifconfig</code> para calcular tu dirección exacta de acceso web.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Dirección IP Local (wlan0):</label>
+                            <input type="text" id="input-ip" placeholder="Ej. 192.168.1.8" value="192.168.1.8" 
+                                class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Puerto de escucha:</label>
+                            <input type="text" id="input-port" placeholder="8080" value="8080" 
+                                class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tu URL para ingresar en el navegador:</span>
+                        <div class="flex items-center justify-between gap-2">
+                            <span id="output-url" class="font-mono text-emerald-400 font-bold text-sm sm:text-base break-all">http://192.168.1.8:8080</span>
+                            <button onclick="copyGeneratedUrl()" class="shrink-0 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors flex items-center gap-1.5">
+                                <i class="fa-solid fa-copy"></i>
+                                <span>Copiar Enlace</span>
                             </button>
                         </div>
                     </div>
-                `;
-                container.insertAdjacentHTML('beforeend', cardHTML);
-            });
-        }
+                </section>
 
-        // Función segura para copiar al portapapeles
-        function copyCommand(btnElement, text) {
-            // Método moderno
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(() => showFeedback(btnElement));
-            } else {
-                // Método Fallback (útil para iframes o entornos sin HTTPS)
-                let textArea = document.createElement("textarea");
-                textArea.value = text;
-                textArea.style.position = "fixed";
-                textArea.style.left = "-999999px";
-                textArea.style.top = "-999999px";
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showFeedback(btnElement);
-                } catch (err) {
-                    console.error('Error al copiar: ', err);
-                }
-                textArea.remove();
+                <!-- SECTION 5: Conexión desde otro Dispositivo -->
+                <section id="connect-device" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">4</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Cómo Conectarse desde otro Dispositivo</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center space-y-2">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center mx-auto text-xs">1</div>
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">Red Wi-Fi</h4>
+                            <p class="text-xs text-slate-500">Conecta tu PC o Tablet al mismo punto de acceso Wi-Fi que el teléfono.</p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center space-y-2">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center mx-auto text-xs">2</div>
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">Navegador Web</h4>
+                            <p class="text-xs text-slate-500">Abre Chrome, Edge, Firefox o Safari en el equipo secundario.</p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center space-y-2">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center mx-auto text-xs">3</div>
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">Ingresar Dirección</h4>
+                            <p class="text-xs text-slate-500">Escribe en la barra: <code class="text-blue-500">http://IP:8080</code> (Usa siempre <b>http</b>).</p>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center space-y-2">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 font-bold flex items-center justify-center mx-auto text-xs">4</div>
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">Autenticación</h4>
+                            <p class="text-xs text-slate-500">Pega la contraseña obtenida de tu archivo <code>config.yaml</code>.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 6: Solución de Errores -->
+                <section id="troubleshooting" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">5</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Solución de Errores Frecuentes</h2>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        
+                        <!-- Accordion Error 1 -->
+                        <details class="group border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+                            <summary class="flex items-center justify-between p-4 font-bold text-sm text-slate-900 dark:text-white cursor-pointer select-none">
+                                <span class="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                    <span>Error 1: ENOENT: process.cwd failed with error...</span>
+                                </span>
+                                <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-3 bg-slate-50/50 dark:bg-slate-950/40">
+                                <p><strong>Causa:</strong> Termux perdió la ruta de la carpeta actual (por ejemplo si borraste una subcarpeta en la que estabas parado).</p>
+                                <p><strong>Solución:</strong> Vuelve al directorio principal de tu usuario en Termux ejecutando:</p>
+                                <div class="relative group">
+                                    <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl"><code>cd ~</code></pre>
+                                    <button onclick="copyCommand('cd ~', this)" class="absolute right-2 top-2 px-2 py-1 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Accordion Error 2 -->
+                        <details class="group border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+                            <summary class="flex items-center justify-between p-4 font-bold text-sm text-slate-900 dark:text-white cursor-pointer select-none">
+                                <span class="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                    <span>Error 2: error listen EADDRINUSE: address already in use...</span>
+                                </span>
+                                <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-3 bg-slate-50/50 dark:bg-slate-950/40">
+                                <p><strong>Causa:</strong> El puerto 8080 ya está ocupado por un proceso previo colgado en segundo plano.</p>
+                                
+                                <div class="space-y-2">
+                                    <p class="font-semibold text-slate-800 dark:text-slate-200">Solución A: Finalizar procesos Node.js</p>
+                                    <div class="relative group">
+                                        <pre class="bg-slate-900 text-slate-100 p-2.5 rounded-xl"><code>pkill -f node</code></pre>
+                                        <button onclick="copyCommand('pkill -f node', this)" class="absolute right-2 top-2 px-2 py-0.5 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                                    </div>
+
+                                    <p class="font-semibold text-slate-800 dark:text-slate-200 pt-1">Solución B: Forzar el cierre del puerto 8080</p>
+                                    <div class="relative group">
+                                        <pre class="bg-slate-900 text-slate-100 p-2.5 rounded-xl"><code>fuser -k 8080/tcp</code></pre>
+                                        <button onclick="copyCommand('fuser -k 8080/tcp', this)" class="absolute right-2 top-2 px-2 py-0.5 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+
+                        <!-- Accordion Error 3 -->
+                        <details class="group border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+                            <summary class="flex items-center justify-between p-4 font-bold text-sm text-slate-900 dark:text-white cursor-pointer select-none">
+                                <span class="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                                    <i class="fa-solid fa-circle-xmark"></i>
+                                    <span>Error 3: El servidor se apaga al bloquear la pantalla</span>
+                                </span>
+                                <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="p-4 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-2 bg-slate-50/50 dark:bg-slate-950/40">
+                                <p><strong>Causa:</strong> El optimizador de batería de Android destruye el proceso de Termux en segundo plano.</p>
+                                <p><strong>Solución:</strong></p>
+                                <ol class="list-decimal pl-4 space-y-1">
+                                    <li>Ejecuta <code>termux-wake-lock</code> en la terminal.</li>
+                                    <li>En Ajustes de tu móvil &rarr; Aplicaciones &rarr; Termux &rarr; Batería: Desactiva la optimización de batería y habilita el inicio automático.</li>
+                                </ol>
+                            </div>
+                        </details>
+
+                    </div>
+                </section>
+
+                <!-- SECTION 7: Respaldo y Restauración -->
+                <section id="backup" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">6</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Respaldo y Restauración</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                            <div class="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
+                                <i class="fa-solid fa-file-zipper text-teal-500"></i>
+                                <span>Crear Copia de Seguridad Completa</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Guarda configuraciones, extensiones e historial en un archivo tar.gz en la SD Card:</p>
+                            <div class="relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-[11px] overflow-x-auto border border-slate-800"><code>termux-setup-storage && cd /data/data/com.termux/files && tar -zcvf /sdcard/termux-backup.tar.gz usr home</code></pre>
+                                <button onclick="copyCommand('termux-setup-storage && cd /data/data/com.termux/files && tar -zcvf /sdcard/termux-backup.tar.gz usr home', this)" class="absolute right-2 top-2 px-2 py-1 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                            </div>
+                        </div>
+
+                        <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-3">
+                            <div class="flex items-center gap-2 font-bold text-slate-900 dark:text-white text-sm">
+                                <i class="fa-solid fa-rotate-left text-teal-500"></i>
+                                <span>Restaurar Copia de Seguridad</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Recupera todo tu entorno previamente respaldado:</p>
+                            <div class="relative group">
+                                <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-[11px] overflow-x-auto border border-slate-800"><code>termux-setup-storage && cd /data/data/com.termux/files && tar -zxvf /sdcard/termux-backup.tar.gz --recursive-unlink --preserve-permissions</code></pre>
+                                <button onclick="copyCommand('termux-setup-storage && cd /data/data/com.termux/files && tar -zxvf /sdcard/termux-backup.tar.gz --recursive-unlink --preserve-permissions', this)" class="absolute right-2 top-2 px-2 py-1 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 8: Desinstalación -->
+                <section id="uninstall" class="scroll-mt-24 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold">7</div>
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Desinstalación y Limpieza</h2>
+                        </div>
+                    </div>
+
+                    <div class="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm space-y-4">
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white text-sm">Desinstalar paquete:</span>
+                            <div class="relative group mt-1.5">
+                                <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-xs border border-slate-800"><code>pkg uninstall code-server -y</code></pre>
+                                <button onclick="copyCommand('pkg uninstall code-server -y', this)" class="absolute right-2 top-2 px-2 py-1 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="font-bold text-slate-900 dark:text-white text-sm">Borrar archivos de datos y extensiones:</span>
+                            <div class="relative group mt-1.5">
+                                <pre class="bg-slate-900 text-slate-100 p-3 rounded-xl text-xs border border-slate-800"><code>rm -rf ~/.config/code-server ~/.local/share/code-server</code></pre>
+                                <button onclick="copyCommand('rm -rf ~/.config/code-server ~/.local/share/code-server', this)" class="absolute right-2 top-2 px-2 py-1 text-xs rounded bg-slate-800 text-slate-300">Copiar</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 9: Autor y Créditos -->
+                <section id="author" class="scroll-mt-24 p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-500/20 shrink-0">
+                            M
+                        </div>
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Autor & Mantenedor</span>
+                            <h3 class="text-xl font-bold text-slate-900 dark:text-white">MichaelARC-NI</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Creador de la guía original de Code-Server para Termux en Android.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-3 shrink-0">
+                        <a href="https://michaelarc-ni.github.io/Instalar-code-server/" target="_blank" rel="noopener" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-xs transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-globe"></i>
+                            <span>Web Oficial</span>
+                        </a>
+                        <a href="https://github.com/MichaelARC-NI/Instalar-code-server.git" target="_blank" rel="noopener" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors flex items-center gap-2 shadow-sm shadow-blue-500/30">
+                            <i class="fa-brands fa-github"></i>
+                            <span>Repositorio</span>
+                        </a>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="px-4 py-3 rounded-2xl bg-slate-900 text-white border border-slate-800 shadow-2xl flex items-center gap-3 text-xs font-semibold">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toast-msg">¡Copiado al portapapeles!</span>
+        </div>
+    </div>
+
+    <script>
+        // Copy to clipboard helper
+        function copyCommand(text, btnElement) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            showToast('¡Comando copiado al portapapeles!');
+
+            if (btnElement) {
+                const originalHTML = btnElement.innerHTML;
+                btnElement.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i><span>¡Copiado!</span>`;
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                }, 2000);
             }
         }
 
-        // Función para mostrar el cambio visual tras copiar
-        function showFeedback(btnElement) {
-            // Cambiar icono en el botón
-            const copyIcon = btnElement.querySelector('.copy-icon');
-            const checkIcon = btnElement.querySelector('.check-icon');
-            
-            copyIcon.classList.add('hidden');
-            checkIcon.classList.remove('hidden');
-            btnElement.classList.add('border-termux-primary', 'bg-emerald-900/20');
-
-            // Mostrar Toast notification
-            toast.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
-            
-            setTimeout(() => {
-                // Restaurar botón
-                copyIcon.classList.remove('hidden');
-                checkIcon.classList.add('hidden');
-                btnElement.classList.remove('border-termux-primary', 'bg-emerald-900/20');
-                
-                // Ocultar Toast
-                toast.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
-            }, 2000);
+        // Copy IP Tool generated URL
+        function copyGeneratedUrl() {
+            const url = document.getElementById('output-url').innerText;
+            copyCommand(url);
         }
 
-        // Ejecutar renderizado inicial
-        renderCommands();
+        // Toast helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Dynamic URL generator listener
+        const inputIp = document.getElementById('input-ip');
+        const inputPort = document.getElementById('input-port');
+        const outputUrl = document.getElementById('output-url');
+
+        function updateUrl() {
+            const ip = inputIp.value.trim() || '192.168.1.8';
+            const port = inputPort.value.trim() || '8080';
+            outputUrl.innerText = `http://${ip}:${port}`;
+        }
+
+        inputIp.addEventListener('input', updateUrl);
+        inputPort.addEventListener('input', updateUrl);
+
+        // Checklist progress calculator
+        const checkboxes = document.querySelectorAll('.step-checkbox');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+
+        function updateProgress() {
+            const total = checkboxes.length;
+            let checked = 0;
+            checkboxes.forEach(cb => {
+                if (cb.checked) checked++;
+            });
+            const percent = Math.round((checked / total) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressPercent.innerText = `${percent}%`;
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateProgress);
+        });
+
+        // Search Filter
+        const searchInput = document.getElementById('global-search');
+        searchInput.addEventListener('keyup', function(e) {
+            const query = e.target.value.toLowerCase();
+            const stepCards = document.querySelectorAll('.step-card');
+            
+            stepCards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if(text.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Theme Switcher Toggle
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        // Mobile Sidebar Drawer Toggle
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const drawerBackdrop = document.getElementById('drawer-backdrop');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+            drawerBackdrop.classList.toggle('hidden');
+        }
+
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+        drawerBackdrop.addEventListener('click', toggleSidebar);
+
+        // Active link scroll highlight
+        const navLinks = document.querySelectorAll('.nav-link');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 120) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active-nav-link');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active-nav-link');
+                }
+            });
+        });
     </script>
 </body>
 </html>
